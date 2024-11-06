@@ -10,18 +10,30 @@ from pydantic import BaseModel
 from typing import List, Optional
 from fastapi.responses import HTMLResponse
 
+import random
+import RSA_Encryption
+
 app = FastAPI()
+
+p1 = RSA_Encryption.prime_list[random.randint(0, len(RSA_Encryption.prime_list)) - 1]
+p2 = RSA_Encryption.prime_list[random.randint(0, len(RSA_Encryption.prime_list)) - 1]
+print("The p = " + str(p1) + " and q = " + str(p2))
+test_keys = RSA_Encryption.key_gen(p1, p2)
+
+RSA_Encryption.prep_function(RSA_Encryption.rsa(RSA_Encryption.prep_function(""), test_keys[0]))
 
 # Sample data to simulate a database
 items = [
-    {"id": 1, "name": "Item 1", "description": "This is item 1"},
-    {"id": 2, "name": "Item 2", "description": "This is item 2"}
+    {"id": 1, "name": RSA_Encryption.prep_function(RSA_Encryption.rsa(RSA_Encryption.prep_function("Item 1"), test_keys[0])), "description": RSA_Encryption.prep_function(RSA_Encryption.rsa(RSA_Encryption.prep_function("This is item 1"), test_keys[0]))},
+    {"id": 2, "name": RSA_Encryption.prep_function(RSA_Encryption.rsa(RSA_Encryption.prep_function("Item 2"), test_keys[0])), "description": RSA_Encryption.prep_function(RSA_Encryption.rsa(RSA_Encryption.prep_function("This is item 2"), test_keys[0]))}
 ]
+
 
 # Pydantic model for item
 class Item(BaseModel):
     name: str
     description: str
+
 
 # Home route with a polished UI to confirm the API is running
 @app.get('/', response_class=HTMLResponse)
