@@ -1,0 +1,131 @@
+<!--Frontend - HTML and JavaScript-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banking System</title>
+    <script>
+        let token = "";
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch('http://127.0.0.1:8000/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `username=${username}&password=${password}`,
+            });
+            const data = await response.json();
+            if (response.ok) {
+                token = data.access_token;
+                document.getElementById('login').style.display = 'none';
+                document.getElementById('menu').style.display = 'block';
+            } else {
+                alert('Login failed: ' + data.detail);
+            }
+        }
+
+        function showSettings() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('settings').style.display = 'block';
+        }
+
+        function showBanking() {
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('banking').style.display = 'block';
+        }
+
+        async function updateSettings() {
+            const newUsername = document.getElementById('newUsername').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const newEmail = document.getElementById('newEmail').value;
+            const response = await fetch('http://127.0.0.1:8000/settings', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ username: newUsername, password: newPassword, email: newEmail }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message);
+                document.getElementById('settings').style.display = 'none';
+                document.getElementById('menu').style.display = 'block';
+            } else {
+                alert('Failed to update settings: ' + data.detail);
+            }
+        }
+
+        async function checkin() {
+            const response = await fetch('http://127.0.0.1:8000/checkin', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            const data = await response.json();
+            if (response.ok) {
+                document.getElementById('bankingInfo').innerText = JSON.stringify(data.accounts, null, 2);
+            } else {
+                alert('Check-in failed: ' + data.detail);
+            }
+        }
+
+        async function updateAccountBalance() {
+            const accountId = document.getElementById('accountId').value;
+            const newBalance = document.getElementById('newBalance').value;
+            const response = await fetch('http://127.0.0.1:8000/account', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ account_id: accountId, balance: parseFloat(newBalance) }),
+            });
+            const data = await response.json();
+            if (response.ok) {
+                alert(data.message);
+                checkin();
+            } else {
+                alert('Failed to update account balance: ' + data.detail);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Banking System</h1>
+    <div id="login">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+        <button onclick="login()">Login</button>
+    </div>
+    <div id="menu" style="display:none;">
+        <h2>Menu</h2>
+        <button onclick="showSettings()">Update Settings</button>
+        <button onclick="showBanking()">Banking Information</button>
+    </div>
+    <div id="settings" style="display:none;">
+        <h2>Update Settings</h2>
+        <input type="text" id="newUsername" placeholder="New Username">
+        <input type="password" id="newPassword" placeholder="New Password">
+        <input type="email" id="newEmail" placeholder="New Email">
+        <button onclick="updateSettings()">Save Changes</button>
+        <button onclick="document.getElementById('settings').style.display='none'; document.getElementById('menu').style.display='block';">Cancel</button>
+    </div>
+    <div id="banking" style="display:none;">
+        <h2>Banking Information</h2>
+        <button onclick="checkin()">View Account Info</button>
+        <pre id="bankingInfo"></pre>
+        <input type="text" id="accountId" placeholder="Account ID">
+        <input type="number" id="newBalance" placeholder="New Balance">
+        <button onclick="updateAccountBalance()">Update Account Balance</button>
+        <button onclick="document.getElementById('banking').style.display='none'; document.getElementById('menu').style.display='block';">Back to Menu</button>
+    </div>
+    <py.script src = ./main.py ></py.script>
+</body>
+</html>

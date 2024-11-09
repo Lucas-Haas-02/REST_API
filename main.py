@@ -3,11 +3,19 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import Optional, List
 from rsa import newkeys, encrypt, decrypt, PublicKey, PrivateKey
-import json
 import base64
 import hashlib
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+from fastapi.responses import FileResponse
+import json
+import os
+
+def data_loader():
+    from loader import load_bank_data
+    data = load_bank_data()
+    print("Loaded Data: ", data)  # Debugging print statement to verify loaded data
+    return data
 
 # Set up RSA keys
 public_key, private_key = newkeys(512)
@@ -31,22 +39,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dummy data to simulate banking system
-with open("bank_data.json", "w") as f:
-    json.dump({
-        "users": [{
-            "username": "user1",
-            "password": hashlib.sha256("password1".encode()).hexdigest(),
-            "email": "user1@bank.com",
-            "accounts": [{
-                "account_id": "001",
-                "balance": 5000
-            }, {
-                "account_id": "002",
-                "balance": 3000
-            }]
-        }]
-    }, f)
+def save_bank_data(data):
+    with open("bank_data.json", "w") as f:
+        json.dump(data, f, indent=4)
 
 # Models for request and response
 class User(BaseModel):
@@ -66,10 +61,17 @@ class SettingsUpdate(BaseModel):
 # Authentication and login endpoint
 @app.post("/token")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    with open("bank_data.json", "r") as f:
-        data = json.load(f)
+    data = data_loader()
+    print(f"Username from form data: {form_data.username}")  # Debugging print statement for username
     user = next((user for user in data["users"] if user["username"] == form_data.username), None)
-    if user and user["password"] == hashlib.sha256(form_data.password.encode()).hexdigest():
+    hashed_password = hashlib.sha256(form_data.password.encode()).hexdigest()
+    print(f"Hashed Password from Login: {hashed_password}")
+    if user:
+        print(f"User found: {user}")  # Debugging print statement for user object
+        print(f"Stored Password Hash: {user['password']}")
+        print(f"Length of stored password hash: {len(user['password'])}")
+        print(f"Length of hashed password from login: {len(hashed_password)}")
+    if user and user["password"].strip() == hashed_password:
         return {"access_token": encrypt_data(user["username"], public_key), "token_type": "bearer"}
     else:
         raise HTTPException(status_code=400, detail="Invalid credentials")
@@ -81,8 +83,7 @@ async def checkin(token: str = Depends(oauth2_scheme)):
         username = decrypt_data(token, private_key)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid token")
-    with open("bank_data.json", "r") as f:
-        data = json.load(f)
+    data = data_loader()
     user = next((user for user in data["users"] if user["username"] == username), None)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -95,8 +96,7 @@ async def update_account(account_update: AccountUpdate, token: str = Depends(oau
         username = decrypt_data(token, private_key)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid token")
-    with open("bank_data.json", "r") as f:
-        data = json.load(f)
+    data = data_loader()
     user = next((user for user in data["users"] if user["username"] == username), None)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -104,8 +104,7 @@ async def update_account(account_update: AccountUpdate, token: str = Depends(oau
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     account["balance"] = account_update.balance
-    with open("bank_data.json", "w") as f:
-        json.dump(data, f)
+    save_bank_data(data)
     return {"message": "Account balance updated successfully"}
 
 # Update user settings (username, password, email)
@@ -115,8 +114,7 @@ async def update_settings(settings_update: SettingsUpdate, token: str = Depends(
         username = decrypt_data(token, private_key)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid token")
-    with open("bank_data.json", "r") as f:
-        data = json.load(f)
+    data = data_loader()
     user = next((user for user in data["users"] if user["username"] == username), None)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -126,8 +124,7 @@ async def update_settings(settings_update: SettingsUpdate, token: str = Depends(
         user["password"] = hashlib.sha256(settings_update.password.encode()).hexdigest()
     if settings_update.email:
         user["email"] = settings_update.email
-    with open("bank_data.json", "w") as f:
-        json.dump(data, f)
+    save_bank_data(data)
     return {"message": "Settings updated successfully"}
 
 # Delete user account
@@ -137,11 +134,9 @@ async def delete_user(token: str = Depends(oauth2_scheme)):
         username = decrypt_data(token, private_key)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid token")
-    with open("bank_data.json", "r") as f:
-        data = json.load(f)
+    data = data_loader()
     data["users"] = [user for user in data["users"] if user["username"] != username]
-    with open("bank_data.json", "w") as f:
-        json.dump(data, f)
+    save_bank_data(data)
     return {"message": "User account deleted successfully"}
 
 # Transfer money between accounts
@@ -156,8 +151,7 @@ async def transfer_money(transfer_request: TransferRequest, token: str = Depends
         username = decrypt_data(token, private_key)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid token")
-    with open("bank_data.json", "r") as f:
-        data = json.load(f)
+    data = data_loader()
     user = next((user for user in data["users"] if user["username"] == username), None)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -169,145 +163,12 @@ async def transfer_money(transfer_request: TransferRequest, token: str = Depends
         raise HTTPException(status_code=400, detail="Insufficient funds")
     from_account["balance"] -= transfer_request.amount
     to_account["balance"] += transfer_request.amount
-    with open("bank_data.json", "w") as f:
-        json.dump(data, f)
+    save_bank_data(data)
     return {"message": "Transfer completed successfully"}
-
-# Frontend - HTML and JavaScript
-html_content = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banking System</title>
-    <script>
-        let token = "";
-
-        async function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const response = await fetch('http://127.0.0.1:8000/token', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `username=${username}&password=${password}`,
-            });
-            const data = await response.json();
-            if (response.ok) {
-                token = data.access_token;
-                document.getElementById('login').style.display = 'none';
-                document.getElementById('menu').style.display = 'block';
-            } else {
-                alert('Login failed: ' + data.detail);
-            }
-        }
-
-        function showSettings() {
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('settings').style.display = 'block';
-        }
-
-        function showBanking() {
-            document.getElementById('menu').style.display = 'none';
-            document.getElementById('banking').style.display = 'block';
-        }
-
-        async function updateSettings() {
-            const newUsername = document.getElementById('newUsername').value;
-            const newPassword = document.getElementById('newPassword').value;
-            const newEmail = document.getElementById('newEmail').value;
-            const response = await fetch('http://127.0.0.1:8000/settings', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ username: newUsername, password: newPassword, email: newEmail }),
-            });
-            const data = await response.json();
-            if (response.ok) {
-                alert(data.message);
-                document.getElementById('settings').style.display = 'none';
-                document.getElementById('menu').style.display = 'block';
-            } else {
-                alert('Failed to update settings: ' + data.detail);
-            }
-        }
-
-        async function checkin() {
-            const response = await fetch('http://127.0.0.1:8000/checkin', {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                },
-            });
-            const data = await response.json();
-            if (response.ok) {
-                document.getElementById('bankingInfo').innerText = JSON.stringify(data.accounts, null, 2);
-            } else {
-                alert('Check-in failed: ' + data.detail);
-            }
-        }
-
-        async function updateAccountBalance() {
-            const accountId = document.getElementById('accountId').value;
-            const newBalance = document.getElementById('newBalance').value;
-            const response = await fetch('http://127.0.0.1:8000/account', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`,
-                },
-                body: JSON.stringify({ account_id: accountId, balance: parseFloat(newBalance) }),
-            });
-            const data = await response.json();
-            if (response.ok) {
-                alert(data.message);
-                checkin();
-            } else {
-                alert('Failed to update account balance: ' + data.detail);
-            }
-        }
-    </script>
-</head>
-<body>
-    <h1>Banking System</h1>
-    <div id="login">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Username">
-        <input type="password" id="password" placeholder="Password">
-        <button onclick="login()">Login</button>
-    </div>
-    <div id="menu" style="display:none;">
-        <h2>Menu</h2>
-        <button onclick="showSettings()">Update Settings</button>
-        <button onclick="showBanking()">Banking Information</button>
-    </div>
-    <div id="settings" style="display:none;">
-        <h2>Update Settings</h2>
-        <input type="text" id="newUsername" placeholder="New Username">
-        <input type="password" id="newPassword" placeholder="New Password">
-        <input type="email" id="newEmail" placeholder="New Email">
-        <button onclick="updateSettings()">Save Changes</button>
-        <button onclick="document.getElementById('settings').style.display='none'; document.getElementById('menu').style.display='block';">Cancel</button>
-    </div>
-    <div id="banking" style="display:none;">
-        <h2>Banking Information</h2>
-        <button onclick="checkin()">View Account Info</button>
-        <pre id="bankingInfo"></pre>
-        <input type="text" id="accountId" placeholder="Account ID">
-        <input type="number" id="newBalance" placeholder="New Balance">
-        <button onclick="updateAccountBalance()">Update Account Balance</button>
-        <button onclick="document.getElementById('banking').style.display='none'; document.getElementById('menu').style.display='block';">Back to Menu</button>
-    </div>
-</body>
-</html>
-"""
 
 @app.get("/frontend")
 async def get_frontend():
-    return Response(content=html_content, media_type="text/html")
+    return FileResponse("banking_view.html")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
