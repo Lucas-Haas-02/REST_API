@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyBank - Login & Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #0a1f2e;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #007bff;
+            padding: 20px;
+            color: #fff;
+            text-align: center;
+            font-size: 1.5em;
+            position: relative;
+        }
+        .menu-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.8em;
+            cursor: pointer;
+            transition: color 0.3s ease;
+        }
+        .menu-icon:hover {
+            color: #cce7ff;
+        }
+        .dropdown-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 250px;
+            height: 100%;
+            background-color: #005bb5;
+            color: #fff;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            padding-top: 60px;
+            box-shadow: 5px 0 15px rgba(0, 0, 0, 0.3);
+        }
+        .dropdown-menu a {
+            display: block;
+            padding: 20px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background-color 0.3s, padding-left 0.3s;
+        }
+        .dropdown-menu a:hover {
+            background-color: #003d80;
+            padding-left: 30px;
+        }
+        .container {
+            max-width: 400px;
+            margin: 80px auto;
+            padding: 30px;
+            background-color: #fff;
+            box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            transition: border-color 0.3s ease;
+        }
+        .form-group input:focus, .form-group select:focus {
+            border-color: #007bff;
+            outline: none;
+        }
+        .form-group input {
+            max-length: 25;
+        }
+        button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #005bb5;
+        }
+        #password-rules, #password-rules-update {
+            display: none;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 10px;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .link {
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .link a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .link a:hover {
+            text-decoration: underline;
+        }
+        #deposit-note {
+            display: none;
+            font-size: 0.9em;
+            color: #555;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <header style="display: none;" id="home-header">
+        <i class="fas fa-bars menu-icon" onclick="toggleMenu()"></i>
+        Welcome to MyBank
+    </header>
+    
+    <div class="dropdown-menu" id="dropdown-menu">
+        <a href="#" onclick="navigateTo('banking-statements')">Banking Statements</a>
+        <a href="#" onclick="navigateTo('account-settings')">Account Settings</a>
+        <a href="#" onclick="navigateTo('home')">Home</a>
+        <a href="#" onclick="logout()">Logout</a>
+    </div>
+    
+    <div class="container" id="login-container">
+        <h2>Log In</h2>
+        <div class="form-group">
+            <label for="login-username">Username</label>
+            <input type="text" id="login-username" placeholder="Enter your username" maxlength="16">
+        </div>
+        <div class="form-group">
+            <label for="login-password">Password</label>
+            <input type="password" id="login-password" placeholder="Enter your password" maxlength="16">
+        </div>
+        <button id="login-button">Log In</button>
+        <div class="link">
+            or, <a href="#" onclick="showCreateAccount()">sign up</a>
+        </div>
+        <p id="login-message"></p>
+    </div>
+
+    <div class="container" id="create-account-container" style="display: none;">
+        <h2>Create an Account</h2>
+        <div class="form-group">
+            <label for="create-username">Username</label>
+            <input type="text" id="create-username" placeholder="Enter your username" maxlength="16">
+        </div>
+        <div class="form-group">
+            <label for="create-email">Email</label>
+            <input type="email" id="create-email" placeholder="Enter your email" maxlength="36">
+        </div>
+        <div class="form-group">
+            <label for="create-password">Password</label>
+            <input type="password" id="create-password" placeholder="Enter your password" maxlength="16">
+            <div id="password-rules">
+                <strong>Password must contain:</strong>
+                <ul>
+                    <li>At least 8 characters</li>
+                    <li>At least one uppercase letter</li>
+                    <li>At least one number</li>
+                    <li>At least one special character</li>
+                </ul>
+            </div>
+        </div>
+        <button id="create-account-button">Create Account</button>
+        <div class="link">
+            or, <a href="#" onclick="showLogin()">log in</a>
+        </div>
+        <p id="create-message"></p>
+    </div>
+
+    <div class="container" id="home-container" style="display: none;">
+        <img src="./images/banking_card_type.png" alt="Banking Card Types" style="max-width: 100%; max-height: 300px; object-fit: contain;">
+        <h2>Welcome to MyBank Home</h2>
+        <p>Manage your accounts, access your banking information, and explore our services in a secure and easy-to-use environment.</p>
+    </div>
+
+    <div class="container" id="banking-statements-container" style="display: none;">
+        <h2>Banking Statements</h2>
+        <div class="form-group">
+            <label for="account-number">Account Number</label>
+            <select id="account-number" onchange="fetchAccountBalance()"></select>
+        </div>
+        <div class="form-group">
+            <label for="account-balance">Balance</label>
+            <input type="text" id="account-balance" disabled>
+        </div>
+        <button id="open-account-button">Open New Account</button>
+        <div class="form-group">
+            <label for="deposit-amount"></label>
+            <input type="text" id="deposit-amount" placeholder="Enter amount (+/-)" maxlength="9">
+            <p id="deposit-note">+ deposit / - withdrawal</p>
+        </div>
+        <button id="deposit-button">Submit Transaction</button>
+    </div>
+
+    <div class="container" id="account-settings-container" style="display: none;">
+        <h2>Account Settings</h2>
+        <div class="form-group">
+            <label for="update-username">Username</label>
+            <input type="text" id="update-username" placeholder="Update your username" maxlength="16">
+        </div>
+        <div class="form-group">
+            <label for="update-email">Email</label>
+            <input type="email" id="update-email" placeholder="Update your email" maxlength="36">
+        </div>
+        <div class="form-group">
+            <label for="update-password">Password</label>
+            <input type="password" id="update-password" placeholder="Update your password" maxlength="16">
+            <div id="password-rules-update">
+                <strong>Password must contain:</strong>
+                <ul>
+                    <li>At least 8 characters</li>
+                    <li>At least one uppercase letter</li>
+                    <li>At least one number</li>
+                    <li>At least one special character</li>
+                </ul>
+            </div>
+        </div>
+        <button id="update-account-button">Update Account</button>
+        <p id="update-message"></p>
+    </div>
+
+    <script>
+        let accessToken = null;
+        let currentUsername = null;
+        let accounts = [];
+
+        async function fetchBankData() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/checkin', {
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    accounts = data.accounts;
+                    const accountSelect = document.getElementById('account-number');
+                    accountSelect.innerHTML = '';
+                    accounts.forEach(account => {
+                        const option = document.createElement('option');
+                        option.value = account.account_id;
+                        option.textContent = `Account ${account.account_id}`;
+                        accountSelect.appendChild(option);
+                    });
+                    if (accounts.length > 0) {
+                        fetchAccountBalance();
+                    }
+                } else {
+                    console.error('Failed to load bank data');
+                }
+            } catch (error) {
+                console.error('Error fetching bank data:', error);
+            }
+        }
+
+        function fetchAccountBalance() {
+            const selectedAccountId = document.getElementById('account-number').value;
+            const account = accounts.find(acc => acc.account_id === selectedAccountId);
+            if (account) {
+                document.getElementById('account-balance').value = `$${account.balance}`;
+            }
+        }
+
+        document.getElementById('open-account-button').addEventListener('click', async function() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/create_account_number', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    alert(`New account created with ID: ${data.account_id}`);
+                    fetchBankData();
+                } else {
+                    console.error('Failed to create a new account');
+                }
+            } catch (error) {
+                console.error('Error creating new account:', error);
+            }
+        });
+
+        document.getElementById('deposit-button').addEventListener('click', async function() {
+            const selectedAccountId = document.getElementById('account-number').value;
+            const transactionAmount = document.getElementById('deposit-amount').value;
+
+            if (!transactionAmount) {
+                alert('Please enter a valid amount');
+                return;
+            }
+
+            const accountUpdate = {
+                account_id: selectedAccountId,
+                amount: transactionAmount
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/account/update_balance', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(accountUpdate)
+                });
+
+                const responseData = await response.json();
+                if (response.ok) {
+                    alert(responseData.message);
+                    fetchAccountBalance();
+                } else {
+                    alert('Transaction failed: ' + responseData.detail);
+                }
+
+                if (responseData.clear_fields) {
+                    document.getElementById('deposit-amount').value = '';
+                }
+
+                // Show real-time change in account balance
+                fetchBankData();
+            } catch (error) {
+                console.error('Error during transaction:', error);
+            }
+        });
+
+        async function logout() {
+            try {
+                const response = await fetch('http://127.0.0.1:8000/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken}`
+                    }
+                });
+                if (response.ok) {
+                    console.log('Logout successful');
+                } else {
+                    console.error('Logout failed');
+                }
+            } catch (error) {
+                console.error('Error logging out:', error);
+            }
+            accessToken = null;
+            currentUsername = null;
+            document.getElementById('login-username').value = '';
+            document.getElementById('login-password').value = '';
+            document.getElementById('home-header').style.display = 'none';
+            document.getElementById('home-container').style.display = 'none';
+            document.getElementById('banking-statements-container').style.display = 'none';
+            document.getElementById('account-settings-container').style.display = 'none';
+            document.getElementById('dropdown-menu').style.transform = 'translateX(-100%)';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        function toggleMenu() {
+            const menu = document.getElementById('dropdown-menu');
+            if (menu.style.transform === 'translateX(0%)') {
+                menu.style.transform = 'translateX(-100%)';
+            } else {
+                menu.style.transform = 'translateX(0%)';
+            }
+        }
+
+        function navigateTo(page) {
+            stopAllTasks();
+            toggleMenu();
+            document.getElementById('home-container').style.display = 'none';
+            document.getElementById('create-account-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('banking-statements-container').style.display = 'none';
+            document.getElementById('account-settings-container').style.display = 'none';
+
+            if (page === 'home') {
+                document.getElementById('home-container').style.display = 'block';
+                document.getElementById('home-header').style.display = 'block';
+            } else if (page === 'banking-statements') {
+                document.getElementById('banking-statements-container').style.display = 'block';
+                document.getElementById('home-header').style.display = 'block';
+                fetchBankData();
+            } else if (page === 'account-settings') {
+                document.getElementById('account-settings-container').style.display = 'block';
+                document.getElementById('home-header').style.display = 'block';
+            }
+        }
+
+        function stopAllTasks() {
+            console.log('Stopping all tasks...');
+        }
+
+        function showCreateAccount() {
+            stopAllTasks();
+            document.getElementById('home-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'none';
+            document.getElementById('create-account-container').style.display = 'block';
+        }
+
+        function showLogin() {
+            stopAllTasks();
+            document.getElementById('home-container').style.display = 'none';
+            document.getElementById('create-account-container').style.display = 'none';
+            document.getElementById('login-container').style.display = 'block';
+        }
+
+        document.getElementById('login-button').addEventListener('click', async function() {
+            stopAllTasks();
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!username || !password) {
+                document.getElementById('login-message').textContent = 'Please enter both username and password';
+                return;
+            }
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${username}&password=${password}`,
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    accessToken = data.access_token;
+                    currentUsername = username;
+                    document.getElementById('login-message').textContent = 'Login successful';
+                    document.getElementById('login-container').style.display = 'none';
+                    document.getElementById('home-container').style.display = 'block';
+                    document.getElementById('home-header').style.display = 'block';
+                } else {
+                    document.getElementById('login-message').textContent = 'Login failed: Invalid credentials';
+                }
+
+                if (response.status === 400) {
+                    document.getElementById('login-username').value = '';
+                    document.getElementById('login-password').value = '';
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('login-message').textContent = 'An error occurred while trying to log in';
+            }
+        });
+
+        document.getElementById('create-password').addEventListener('focus', function() {
+            document.getElementById('password-rules').style.display = 'block';
+        });
+
+        document.getElementById('create-password').addEventListener('blur', function() {
+            document.getElementById('password-rules').style.display = 'none';
+        });
+
+        document.getElementById('update-password').addEventListener('focus', function() {
+            document.getElementById('password-rules-update').style.display = 'block';
+        });
+
+        document.getElementById('update-password').addEventListener('blur', function() {
+            document.getElementById('password-rules-update').style.display = 'none';
+        });
+
+        document.getElementById('deposit-amount').addEventListener('focus', function() {
+            document.getElementById('deposit-note').style.display = 'block';
+        });
+
+        document.getElementById('deposit-amount').addEventListener('blur', function() {
+            document.getElementById('deposit-note').style.display = 'none';
+        });
+
+        document.getElementById('create-account-button').addEventListener('click', async function() {
+            stopAllTasks();
+            const username = document.getElementById('create-username').value;
+            const email = document.getElementById('create-email').value;
+            const password = document.getElementById('create-password').value;
+
+            if (!username || !email || !password) {
+                document.getElementById('create-message').textContent = 'Please fill in all fields';
+                return;
+            }
+
+            const accountData = {
+                username,
+                email,
+                password
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/create_account', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(accountData),
+                });
+
+                const responseData = await response.json();
+                if (response.ok) {
+                    document.getElementById('create-message').textContent = 'Account created successfully';
+                } else {
+                    document.getElementById('create-message').textContent = responseData.message;
+                }
+
+                if (responseData.clear_fields) {
+                    document.getElementById('create-username').value = '';
+                    document.getElementById('create-email').value = '';
+                    document.getElementById('create-password').value = '';
+                }
+            } catch (error) {
+                console.error('Error creating account:', error);
+                document.getElementById('create-message').textContent = 'An error occurred while trying to create account';
+                document.getElementById('create-username').value = '';
+                document.getElementById('create-email').value = '';
+                document.getElementById('create-password').value = '';
+            }
+        });
+
+        document.getElementById('update-account-button').addEventListener('click', async function() {
+            stopAllTasks();
+            const updatedUsername = document.getElementById('update-username').value;
+            const updatedEmail = document.getElementById('update-email').value;
+            const updatedPassword = document.getElementById('update-password').value;
+
+            const settingsUpdate = {
+                username: updatedUsername || null,
+                email: updatedEmail || null,
+                password: updatedPassword || null
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/settings/update', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken}`
+                    },
+                    body: JSON.stringify(settingsUpdate),
+                });
+
+                const responseData = await response.json();
+                if (response.ok) {
+                    document.getElementById('update-message').textContent = 'Account updated successfully';
+                } else {
+                    document.getElementById('update-message').textContent = responseData.message;
+                }
+
+                if (responseData.clear_fields) {
+                    document.getElementById('update-username').value = '';
+                    document.getElementById('update-email').value = '';
+                    document.getElementById('update-password').value = '';
+                }
+            } catch (error) {
+                console.error('Error updating account:', error);
+                document.getElementById('update-message').textContent = 'An error occurred while trying to update account';
+            }
+        });
+    </script>
+</body>
+</html>
