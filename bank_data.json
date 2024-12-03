@@ -1,0 +1,32 @@
+{
+    "users": [
+        {
+            "username": "lhaas2",
+            "password": "484ac04a94745502128df51c24ff5be83d916e7a0d6ced609a0a83fc5a4afd49",
+            "email": "lhaas2@gmail.com",
+            "accounts": [
+                {
+                    "account_id": "257026884",
+                    "balance": 300.0
+                }
+            ]
+        },
+        {
+            "username": "user1",
+            "password": "cef48e1a1e54d6e5742ea569236279610836adecaa56e1064a95bb9fd40bc925",
+            "email": "user1@example.net",
+            "accounts": []
+        },
+        {
+            "username": "t1",
+            "password": "484ac04a94745502128df51c24ff5be83d916e7a0d6ced609a0a83fc5a4afd49",
+            "email": "t1@example.com",
+            "accounts": [
+                {
+                    "account_id": "110465668",
+                    "balance": 300.0
+                }
+            ]
+        }
+    ]
+}
